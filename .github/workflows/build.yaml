@@ -1,0 +1,76 @@
+name: Build and Release
+on:
+  push:
+    branches: ['*']
+    tags: ['*']
+  pull_request:
+    branches: [master]
+jobs:
+  linux:
+    name: Linux Build
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3.1.0
+      - name: Set Up Rust Toolchain
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: 1.65.0
+          override: true
+          profile: minimal
+      - name: Compile
+        uses: actions-rs/cargo@v1.0.3
+        with:
+          command: build
+          args: --release
+      - name: Create Build Artifact
+        run: |
+          mkdir iphoto_exporter-${GITHUB_REF_NAME}-linux-x86_64
+          cp target/release/iphoto-exporter iphoto_exporter-${GITHUB_REF_NAME}-linux-x86_64/
+          tar -cJf iphoto_exporter-${GITHUB_REF_NAME}-linux-x86_64.txz iphoto_exporter-${GITHUB_REF_NAME}-linux-x86_64
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: linux-x86_64
+          path: iphoto_exporter-${{ github.ref_name }}-linux-x86_64.txz
+  macos:
+    name: macOS Build
+    runs-on: macos-12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3.1.0
+      - name: Set Up Rust Toolchain
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: 1.65.0
+          override: true
+          profile: minimal
+      - name: Compile
+        uses: actions-rs/cargo@v1.0.3
+        with:
+          command: build
+          args: --release
+      - name: Create Build Artifact
+        run: |
+          mkdir iphoto_exporter-${GITHUB_REF_NAME}-darwin-x86_64
+          cp target/release/iphoto-exporter iphoto_exporter-${GITHUB_REF_NAME}-darwin-x86_64/
+          tar -cJf iphoto_exporter-${GITHUB_REF_NAME}-darwin-x86_64.txz iphoto_exporter-${GITHUB_REF_NAME}-darwin-x86_64
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: macos-x86_64
+          path: iphoto_exporter-${{ github.ref_name }}-darwin-x86_64.txz
+  release:
+    name: Create Release
+    runs-on: ubuntu-22.04
+    needs: [linux, macos]
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    steps:
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3.0.1
+      - name: Release
+        uses: softprops/action-gh-release@v0.1.15
+        with:
+          files: |
+            macos-x86_64/**
+            linux-x86_64/**

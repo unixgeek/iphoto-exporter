@@ -1,0 +1,17 @@
+[package]
+name = "iphoto-exporter"
+version = "1.0.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+crc32fast = "=1.3.2"
+env_logger = "=0.9.0"
+log = "=0.4.17"
+plist = "=1.3.1"
+progressing = "=3.0.2"
+serde = {version = "=1.0.144", features = ["derive"] }
+structopt = "=0.3.26"
+
+[profile.release]
+strip = "symbols"
